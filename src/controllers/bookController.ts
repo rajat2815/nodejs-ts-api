@@ -8,6 +8,8 @@ export interface IResponse{
 }
 
 export const getBooks = async (req: Request, res:Response)=>{
+
+    return res.status(200).json({success:true , message : "My data is" , data : {id:req.id , role: req.role}})
     try {
         const books = await Book.find()
         if(!books)
@@ -24,6 +26,10 @@ export const getBooks = async (req: Request, res:Response)=>{
     
 }
 export const addBook = async(req:Request , res:Response)=>{
+    if(req.role !== "creator"){
+        return res.status(401).json({success:false , message:"You are not eligible", data:null})
+    }
+    
     const{name , author , publishYear , description} = req.body
     try {
         const book = await Book.create({
@@ -83,4 +89,4 @@ export const deleteBook = async(req:Request , res:Response) => {
     } catch (error:any) {
         return res.status(500).json({success:false , message:error.message} as IResponse)
     }
-} 
+}   

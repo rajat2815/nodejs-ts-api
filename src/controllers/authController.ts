@@ -2,6 +2,8 @@ import { Request, Response } from "express"
 import { IResponse } from "./bookController"
 import { User, IUser } from "../models/user"
 import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken"
+import {Secret} from "jsonwebtoken"
 
 export const signup = async (req: Request, res: Response) => {
 
@@ -49,11 +51,36 @@ export const login = async(req:Request , res:Response) =>{
         }
         
        
-        // let user : IUser | null;
-        // user = await User.find({})
+        let user : IUser | null;
+        user = await User.findOne({email})
+
+        if(!user)
+        {
+            return res.status(400).json({success:false , message:"Please Signup!!" , data:null})
+        }
+
+        //checking if password is correct or not 
+        //compare
+        let comparePassword = await bcrypt.compare(password , user.password)
+       
+        //if incorrect
+        if(!comparePassword){
+            return res.status(500).json({success:false , message:"Invalid Email or Password" , data:null})
+        }
+
+        const payload= {
+            id: user._id,
+            role: user.role,
+
+        }
+
+        const token = jwt.sign(payload , process.env.JWT_SECRET as Secret , {
+            expiresIn : "1hr",
+        } )
 
 
-        return res.status(200).json({success:true , message:"Login Successfull" , data:{email , username , password}} as IResponse)
+        //if correct
+        return res.status(200).cookie("token" , token).json({success:true , message:"Login Successfull" , data:{email , username , password}} as IResponse)
         
     } catch (error:any) {
         return res.status(500).json({success:false , message:error.message , data:null})
